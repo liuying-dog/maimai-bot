@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 代理测速弹窗里的一行：选择圈 + 名称 + 延迟。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="56dp"
+    android:background="?android:attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <TextView
+        android:id="@+id/accel_radio"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:gravity="center"
+        android:text="○"
+        android:textColor="#8A83A0"
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/accel_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="18dp"
+        android:layout_weight="1"
+        android:text="Gh-Proxy"
+        android:textColor="#201A2B"
+        android:textSize="17sp" />
+
+    <TextView
+        android:id="@+id/accel_ping"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#2E9E5B"
+        android:textSize="17sp" />
+</LinearLayout>

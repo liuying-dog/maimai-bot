@@ -1,0 +1,39 @@
+# 构建产物
+app/build/
+build/
+.gradle/
+*.apk
+*.aab
+*.dex
+*.class
+
+# 内置二进制大包（体积太大，不进版本库）
+# 说明见 README 的「内置资源」一节，需要单独下载或从真机导出
+app/src/main/assets/maibot_env.bin
+app/src/main/assets/rootfs.bin
+app/src/main/assets/uv.bin
+app/src/main/assets/linuxqq.deb
+app/src/main/assets/napcat.zip
+app/src/main/assets/proot
+
+# 编译出的中间件（可复现，不必入库）
+app/src/main/assets/seccompshim.bin
+app/src/main/assets/cwdshim.bin
+
+# 本地配置与密钥
+local.properties
+*.jks
+*.keystore
+keystore.properties
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# 系统垃圾
+.DS_Store
+Thumbs.db
+*.log
+*.swp
+*~

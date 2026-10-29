@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 「有更新」状态的按钮底。
+     沿用 bg_badge_gray 的圆角和内边距，只把底色换成浅橙，
+     这样和状态点的橙色（0xFFE17055）是同一套提示色，一眼能对上是「这个要更新」。 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#FDEDE8" />
+    <corners android:radius="8dp" />
+</shape>

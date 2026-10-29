@@ -1,0 +1,513 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_app">
+
+    <ScrollView
+        android:id="@+id/scroll_root"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="104dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="18dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="8dp">
+
+            <!-- 顶部胶囊：标题 + 齿轮 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_pill"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="20dp"
+                android:paddingTop="16dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="16dp">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="主页"
+                    android:textColor="#2B2430"
+                    android:textSize="26sp"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <!-- 卡片 1：麦麦主控 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription=""
+                        android:src="@drawable/ic_sparkle"
+                        android:tint="#6C5CE7" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="9dp"
+                        android:layout_weight="1"
+                        android:text="麦麦"
+                        android:textColor="#2B2430"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/detail_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="首次使用需安装运行环境"
+                    android:textColor="#7A7290"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/status_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="未安装"
+                    android:textColor="#A9A3BC"
+                    android:textSize="12sp" />
+
+                <ProgressBar
+                    android:id="@+id/progress"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:max="100"
+                    android:progressTint="#6C5CE7"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btn_start"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_btn_primary"
+                        android:stateListAnimator="@null"
+                        android:text="▶  启动麦麦"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp" />
+
+                    <Button
+                        android:id="@+id/btn_stop"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_btn_outline"
+                        android:enabled="false"
+                        android:stateListAnimator="@null"
+                        android:text="停止"
+                        android:textAllCaps="false"
+                        android:textColor="#6C5CE7"
+                        android:textSize="15sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/btn_webui"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_btn_outline"
+                        android:enabled="false"
+                        android:stateListAnimator="@null"
+                        android:text="打开控制台"
+                        android:textAllCaps="false"
+                        android:textColor="#4A4258"
+                        android:textSize="14sp" />
+
+                    <Button
+                        android:id="@+id/btn_console"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_btn_outline"
+                        android:stateListAnimator="@null"
+                        android:text="运行日志"
+                        android:textAllCaps="false"
+                        android:textColor="#4A4258"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/webui_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:fontFamily="monospace"
+                    android:textColor="#7A7290"
+                    android:textIsSelectable="true"
+                    android:textSize="11sp"
+                    android:visibility="gone" />
+
+                <!-- 只在这一轮还没设过登录密码时出现（token 是临时的才有复制意义） -->
+                <Button
+                    android:id="@+id/btn_copy_token"
+                    android:layout_width="wrap_content"
+                    android:layout_height="38dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_btn_outline"
+                    android:stateListAnimator="@null"
+                    android:text="复制 Token"
+                    android:textAllCaps="false"
+                    android:textColor="#6C5CE7"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <!-- 卡片 2：QQ 账号（NapCat + LinuxQQ，照 AstrBot 那套）
+                 麦麦自己不会连 QQ，必须有一层把 QQ 会话翻译成 OneBot 的桥接。
+                 这一层现在统一用 NapCat：它在 proot 里跑官方 LinuxQQ，
+                 靠 LD_PRELOAD 挂上去，不需要 ptrace，所以在 App 沙盒里就能工作。
+                 （早期试过另一条外部进程注入的路线，和 proot 的单 tracer 打架，
+                   已在真机上验证走不通，故整体移除。） -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription=""
+                        android:src="@drawable/ic_link"
+                        android:tint="#1E9E54" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="9dp"
+                        android:layout_weight="1"
+                        android:text="QQ 账号（NapCat）"
+                        android:textColor="#2B2430"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <!-- 右上角「+」：新增一个账号（每个账号一个独立 NapCat 实例） -->
+                    <TextView
+                        android:id="@+id/btn_qq_add"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/bg_circle_white"
+                        android:gravity="center"
+                        android:text="+"
+                        android:textColor="#6C5CE7"
+                        android:textSize="22sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/qq_desc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="每个账号是一套独立的 NapCat 实例（独立 WebUI 端口与 token）。点左边圆形按钮启动并自动打开面板，登录后账号会自动保存，下次免扫码。"
+                    android:textColor="#A9A3BC"
+                    android:textSize="11sp" />
+
+                <!-- 账号列表：每个账号一行，右侧三个图标＝面板 / 启动 / 更多 -->
+                <LinearLayout
+                    android:id="@+id/account_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/account_hint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="扫码登录后，账号会出现在这里"
+                    android:textColor="#A9A3BC"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <!-- 卡片 3：环境管理（可展开） -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_card"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingTop="18dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="14dp">
+
+                <!-- 标题栏：整行可点，点一下展开/收起 -->
+                <LinearLayout
+                    android:id="@+id/env_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="?android:attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription=""
+                        android:src="@drawable/ic_box"
+                        android:tint="#6C5CE7" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="环境管理"
+                                android:textColor="#2B2430"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/env_version"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:background="@drawable/bg_badge_green"
+                                android:paddingStart="8dp"
+                                android:paddingTop="2dp"
+                                android:paddingEnd="8dp"
+                                android:paddingBottom="2dp"
+                                android:text="v0.1.0"
+                                android:textColor="#1E9E54"
+                                android:textSize="10sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/env_subtitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Ubuntu 24.04 · 点击展开"
+                            android:textColor="#A9A3BC"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <!-- 加速器入口：点开 GitHub 代理测速弹窗。
+                         放在箭头左边，和环境管理标题同一行，一眼能看到。 -->
+                    <TextView
+                        android:id="@+id/btn_accel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="30dp"
+                        android:layout_marginEnd="10dp"
+                        android:background="@drawable/bg_btn_outline"
+                        android:gravity="center"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:text="加速器"
+                        android:textColor="#6C5CE7"
+                        android:textSize="12sp" />
+
+                    <!-- 展开箭头，展开时旋转 180° -->
+                    <ImageView
+                        android:id="@+id/env_arrow"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:contentDescription="展开"
+                        android:src="@drawable/ic_arrow_down"
+                        android:tint="#A9A3BC" />
+                </LinearLayout>
+
+                <!-- 展开区：默认收起 -->
+                <LinearLayout
+                    android:id="@+id/env_body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="4dp"
+                        android:background="#14000000" />
+<!-- 各环境项由 MainActivity 动态填进来 -->
+                    <LinearLayout
+                        android:id="@+id/env_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <!-- 底部：一键全部安装 -->
+                    <TextView
+                        android:id="@+id/btn_reinstall"
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_btn_outline"
+                        android:gravity="center"
+                        android:text="重装整个环境（清空 rootfs）"
+                        android:textColor="#4A4258"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- 底部悬浮导航 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_nav"
+        android:elevation="8dp"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:id="@+id/tab_home"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/bg_nav_active"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <ImageView
+                android:id="@+id/ic_tab_home"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="主页"
+                android:src="@drawable/ic_home"
+                android:tint="#6C5CE7" />
+
+            <TextView
+                android:id="@+id/tv_tab_home"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="主页"
+                android:textColor="#4A3F7A"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tab_webui"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <ImageView
+                android:id="@+id/ic_tab_webui"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="WebUI"
+                android:src="@drawable/ic_globe"
+                android:tint="#A9A3BC" />
+
+            <TextView
+                android:id="@+id/tv_tab_webui"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="WebUI"
+                android:textColor="#A9A3BC"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tab_term"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <ImageView
+                android:id="@+id/ic_tab_term"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="终端"
+                android:src="@drawable/ic_terminal"
+                android:tint="#A9A3BC" />
+
+            <TextView
+                android:id="@+id/tv_tab_term"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="终端"
+                android:textColor="#A9A3BC"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+</FrameLayout>

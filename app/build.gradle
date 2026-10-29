@@ -1,0 +1,68 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.maimai.bot'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.maimai.bot"
+        minSdk 26
+        targetSdk 27
+        versionCode 1
+        versionName "0.1.0"
+
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            debuggable true
+        }
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    packagingOptions {
+        jniLibs {
+            // 必须解压：proot 需要用真实文件路径 exec，
+            // 若被压进 APK 里就没有可执行的实体文件。
+            // useLegacyPackaging=true 时系统会把 so 解到 nativeLibraryDir
+            // 并给 755 权限，这也是 Android 10+ W^X 下唯一能 exec 的位置。
+            useLegacyPackaging = true
+        }
+    }
+
+    // libproot.so 其实是个可执行的 proot 二进制（改了后缀骗过打包器），
+    // 千万别让 AGP 去 strip 它，strip 会把非标准 ELF 改坏。
+    androidComponents {
+        onVariants(selector().all()) { variant ->
+            variant.packaging.jniLibs.keepDebugSymbols.add("**/libproot.so")
+            variant.packaging.jniLibs.keepDebugSymbols.add("**/libtalloc.so")
+        }
+    }
+
+    // 内置 Ubuntu rootfs 与脚本放在 assets 里，原样打包不压缩。
+    // 注意：.gz 必须显式列入 noCompress，否则 AAPT 会把 rootfs.tar.gz 解压改名成
+    // rootfs.tar 塞进 APK（体积从 95MB 涨到 302MB），代码按原名就找不到文件。
+    // 现在统一用 .bin 后缀，从根上避开扩展名推断。
+    androidResources {
+        noCompress 'bin', 'gz', 'xz', 'sh', 'json', 'md', 'so'
+    }
+}
+
+dependencies {
+    // 刻意零第三方依赖：HttpURLConnection + 原生 API 足够，
+    // 也能避免离线构建时依赖解析失败
+}

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 两只耳朵 -->
+    <path
+        android:fillColor="#3A2A24"
+        android:pathData="M32,34 L38,16 L50,30 Z" />
+    <path
+        android:fillColor="#3A2A24"
+        android:pathData="M76,34 L70,16 L58,30 Z" />
+    <!-- 头部 -->
+    <path
+        android:fillColor="#3A2A24"
+        android:pathData="M54,28 m-26,0 a26,26 0 1,0 52,0 a26,26 0 1,0 -52,0" />
+    <!-- 眼睛 -->
+    <path
+        android:fillColor="#FFF7F2"
+        android:pathData="M44,26 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    <path
+        android:fillColor="#FFF7F2"
+        android:pathData="M64,26 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    <!-- 鼻子 -->
+    <path
+        android:fillColor="#FF7A5C"
+        android:pathData="M54,34 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
+</vector>

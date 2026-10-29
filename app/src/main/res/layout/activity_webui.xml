@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_app"
+    android:orientation="vertical">
+    <!-- 顶部工具条：返回 + 标题 + 刷新 + 更多 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/bg_term_header"
+        android:orientation="vertical"
+        android:paddingStart="4dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="6dp"
+        android:paddingBottom="6dp">
+
+        <!-- 第一行：返回 + 标题 + 刷新 + 更多 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btn_back"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="返回"
+                android:padding="7dp"
+                android:rotation="180"
+                android:src="@drawable/ic_chevron_right"
+                android:tint="#2B2430" />
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_marginStart="2dp"
+                android:contentDescription=""
+                android:src="@drawable/ic_globe"
+                android:tint="#7A7290" />
+
+            <TextView
+                android:id="@+id/webui_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="WebUI"
+                android:textColor="#2B2430"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btn_reload"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="@android:color/transparent"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="⟳"
+                android:textColor="#4A4258"
+                android:textSize="17sp" />
+
+            <ImageButton
+                android:id="@+id/btn_more"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@android:color/transparent"
+                android:contentDescription="更多"
+                android:padding="4dp"
+                android:src="@drawable/ic_dots_h"
+                android:tint="#2B2430" />
+        </LinearLayout>
+
+        <!-- 第二行：面板切换 麦麦 / QQ 桥接
+             放进标题条里（跟 AstrBot 一致），省掉单独一行占的高度，
+             同时把字号和高度放大，手指点起来更容易。
+             两个面板共用同一个 WebView，只是换 URL。 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_row_soft"
+            android:orientation="horizontal"
+            android:padding="4dp">
+
+            <TextView
+                android:id="@+id/tab_mb"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_nav_active"
+                android:gravity="center"
+                android:text="麦麦"
+                android:textColor="#4A3F7A"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tab_sl"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="QQ 桥接"
+                android:textColor="#7A7290"
+                android:textSize="15sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+
+    <!-- 细进度条 -->
+    <ProgressBar
+        android:id="@+id/web_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="24dp"
+        android:max="100"
+        android:progressTint="#6C5CE7"
+        android:visibility="gone" />
+
+    <!-- WebView 容器 -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:layout_weight="1"
+        android:background="@drawable/bg_card"
+        android:padding="2dp">
+
+        <WebView
+            android:id="@+id/web_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#FFFFFF" />
+    </FrameLayout>
+
+    <!-- 底部悬浮导航：本次选中 WebUI -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_nav"
+        android:elevation="8dp"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:id="@+id/tab_home"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="主页"
+                android:src="@drawable/ic_home"
+                android:tint="#A9A3BC" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="主页"
+                android:textColor="#A9A3BC"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tab_webui"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@drawable/bg_nav_active"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="WebUI"
+                android:src="@drawable/ic_globe"
+                android:tint="#6C5CE7" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="WebUI"
+                android:textColor="#4A3F7A"
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tab_term"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="终端"
+                android:src="@drawable/ic_terminal"
+                android:tint="#A9A3BC" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:text="终端"
+                android:textColor="#A9A3BC"
+                android:textSize="11sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

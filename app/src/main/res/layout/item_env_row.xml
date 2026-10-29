@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  环境管理里的一行：图标 + 名称/说明 + 右侧动作按钮。
+  对应截图里「基础命令 / uv / NapCat / AstrBot」那种条目。
+
+  右侧按钮用 TextView 而不是 Button：Button 默认带最小高度和内边距，
+  在这行里会撑高，还得额外压 stateListAnimator，不如直接用 TextView + 背景。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingTop="10dp"
+    android:paddingBottom="10dp">
+
+    <ImageView
+        android:id="@+id/item_icon"
+        android:layout_width="26dp"
+        android:layout_height="26dp"
+        android:contentDescription=""
+        android:src="@drawable/ic_box"
+        android:tint="#6C5CE7" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/item_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="基础命令"
+                android:textColor="#2B2430"
+                android:textSize="15sp" />
+
+            <!-- 状态点：装好了就绿勾，没装就灰点，装失败就红点 -->
+            <TextView
+                android:id="@+id/item_state"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:text=""
+                android:textSize="11sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/item_desc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:text="sudo / git / curl"
+            android:textColor="#A9A3BC"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/item_action"
+        android:layout_width="wrap_content"
+        android:layout_height="34dp"
+        android:background="@drawable/bg_btn_outline"
+        android:gravity="center"
+        android:minWidth="64dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:text="重装"
+        android:textColor="#4A4258"
+        android:textSize="11sp" />
+</LinearLayout>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">麦麦 Bot</string>
+
+    <string name="status_stopped">未运行</string>
+    <string name="status_starting">启动中</string>
+    <string name="status_running">运行中</string>
+    <string name="status_installing">安装中</string>
+    <string name="status_error">出错</string>
+
+    <string name="btn_start">启动</string>
+    <string name="btn_stop">停止</string>
+    <string name="btn_open_webui">打开控制台</string>
+    <string name="btn_console">运行日志</string>
+    <string name="btn_settings">设置</string>
+    <string name="btn_reinstall">重装实例</string>
+
+    <string name="tab_home">状态</string>
+    <string name="tab_config">模型</string>
+    <string name="tab_log">日志</string>
+
+    <string name="hint_api_key">API Key</string>
+    <string name="hint_base_url">接口地址</string>
+    <string name="hint_model">模型名</string>
+    <string name="btn_save">保存</string>
+    <string name="btn_save_restart">保存并重启</string>
+</resources>
