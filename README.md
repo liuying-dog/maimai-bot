@@ -189,3 +189,5 @@ NapCat 和 LinuxQQ 因为内置了，不需要联网。
 
 本项目代码可自由使用。内置的第三方组件遵循各自许可：
 MaiBot（AGPL-3.0）、NapCat（AGPL-3.0）、LinuxQQ（腾讯自有协议）、Ubuntu（GPL 等）。
+
+##qq群号：1134218944
