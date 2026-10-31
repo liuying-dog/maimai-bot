@@ -66,27 +66,6 @@ app/src/main/
 aarch64-linux-gnu-gcc -shared -fPIC -O2 -o libseccompshim.so seccompshim.c -ldl
 ```
 
----
-
-## NapCat 与 LinuxQQ 的版本
-
-**NapCat 的包里读不出真实版本。** 上游从来不维护 `package.json` 的 `version` 字段——
-4.18.41 的官方发行包里那个字段也还是 `"0.0.1"`。`napcat.mjs` 里虽然能 grep 到
-`4.18.41`，但同一文件里还混着 4.0.46、4.3.x、4.2.x 一堆依赖版本号，区分不出来。
-
-所以现在自己记一份：
-
-- 安装完成时把版本写进 `<rootfs>/root/napcat/.napcat_version`
-- 内置包用 `NapCatInstaller.BUNDLED_NAPCAT_VERSION` 常量（换 `napcat.zip` 时必须同步改）
-- 在线安装时从 GitHub `releases/latest` 的 `tag_name` 抓
-- 读取走 `NapCat.detectVersion()`：标记文件 → 启动日志里的 `NapCat.Core Version: x.y.z` → 空
-
-**LinuxQQ 的版本**读 `/opt/QQ/resources/app/package.json`，格式是 `3.2.21-42086`，
-只取前半段 `3.2.21` 参与比较。上游最新版从腾讯的 `linuxConfig.js` 里取
-`"version":"3.2.34"`。
-
-展开「环境管理」时会并发查这三个组件，有新版的行按钮会从「重装」变成「更新」。
-LinuxQQ 和 NapCat 是两条独立发布线，可以单独重装——升 QQ 不必重下 92MB 的 NapCat。
 
 ---
 
