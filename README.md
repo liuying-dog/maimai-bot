@@ -44,29 +44,6 @@ app/src/main/
 │   └── cwdshim.bin                  getcwd 垫片
 └── res/                             界面资源
 ```
-
----
-
-## 内置资源
-
-`.gitignore` 排除了 6 个大文件（合计约 583MB），要自己准备：
-
-| 文件 | 来源 | 说明 |
-|---|---|---|
-| `maibot_env.bin` | 从真机导出 | `cd /root/.local/share/uv && tar -czf out.bin tools/maibot`，打包前先清掉 `.l2s.*` 坏链接 |
-| `rootfs.bin` | Ubuntu 24.04 arm64 最小根文件系统 | `tar -czf`，保留符号链接 |
-| `uv.bin` | [astral-sh/uv](https://github.com/astral-sh/uv) aarch64 | 静态二进制 |
-| `napcat.zip` | [NapCatQQ Releases](https://github.com/NapNeko/NapCatQQ/releases) 的 `NapCat.Shell.zip` | 国内直链常断，用 `gh-proxy.com` 前缀 |
-| `linuxqq.deb` | 腾讯官方 `linuxConfig.js` 里的 arm64 deb | `qqdl.gtimg.cn` 直链 403，要走签名接口换带 sign 的地址 |
-| `proot` | 本项目 `jniLibs` 里的 `libproot.so` | 或者用 termux 的 proot 静态版 |
-
-`seccompshim.bin` / `cwdshim.bin` 是编译产物，源文件在 `shim/` 目录，可随时重编：
-
-```bash
-aarch64-linux-gnu-gcc -shared -fPIC -O2 -o libseccompshim.so seccompshim.c -ldl
-```
-
-
 ---
 
 ## 许可
