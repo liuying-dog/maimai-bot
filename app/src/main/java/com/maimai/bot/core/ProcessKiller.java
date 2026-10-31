@@ -404,6 +404,7 @@ public final class ProcessKiller {
     public static boolean isPortListening(int port) {
         // 先看 /proc/net/tcp（最准，能拿到别的进程的监听）
         if (portListeningViaProc(port)) {
+            diag("proc命中 " + port);
             return true;
         }
         // 再退一步：真连一下 127.0.0.1。
@@ -415,22 +416,75 @@ public final class ProcessKiller {
         //   某些环境下拿不到完整的 socket 表（网络命名空间/权限差异）。
         //   于是主界面那张卡片一直显示「未运行」，可点进去面板却是好的。
         //   加一层 socket 探测就能覆盖这种情况。
-        return portConnectable(port);
+        boolean connectable = portConnectable(port);
+        diag("proc未命中 " + port + " connect=" + connectable);
+        return connectable;
     }
+
+    /**
+     * 端口探测诊断日志。
+     * <p>
+     * 直接追加到 App 私有目录下的 port_diag.log，不走 logcat ——
+     * logcat 会被刷掉、也不方便远程看，落到文件里最省事。
+     * 同一组合 5 秒内不重复记，避免刷屏把文件撑大。
+     * <p>
+     * 目的是下次出现「明明在跑却显示未运行」时，能直接从这份日志看出
+     * 到底是 /proc 读不到，还是 socket 连不上。
+     */
+    private static void diag(String msg) {
+        long now = System.currentTimeMillis();
+        if (now - lastDiagAt < 5000 && msg.equals(lastDiagMsg)) {
+            return;
+        }
+        lastDiagAt = now;
+        lastDiagMsg = msg;
+        try {
+            Log.i(TAG, "[port] " + msg);
+        } catch (Throwable ignored) {
+        }
+        try {
+            java.io.File f = new java.io.File(
+                    "/data/data/com.maimai.bot/files/port_diag.log");
+            // 超过 64KB 就清空重来，别让它无限长
+            if (f.isFile() && f.length() > 64 * 1024) {
+                //noinspection ResultOfMethodCallIgnored
+                f.delete();
+            }
+            String line = android.text.format.DateFormat
+                    .format("MM-dd HH:mm:ss", now).toString()
+                    + "  " + msg + "\n";
+            try (java.io.FileOutputStream out =
+                         new java.io.FileOutputStream(f, true)) {
+                out.write(line.getBytes("UTF-8"));
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private static long lastDiagAt = 0;
+    private static String lastDiagMsg = "";
 
     /** 读 /proc/net/tcp{,6} 找 LISTEN 状态。 */
     private static boolean portListeningViaProc(int port) {
         String hexPort = String.format("%04X", port);
         for (String file : new String[]{"/proc/net/tcp", "/proc/net/tcp6"}) {
-            FileInputStream in = null;
+            java.io.FileInputStream in = null;
             try {
-                in = new FileInputStream(file);
-                byte[] buf = new byte[8192];
-                int n = in.read(buf);
-                if (n <= 0) {
-                    continue;
+                in = new java.io.FileInputStream(file);
+                // 必须把整个文件读完。
+                //
+                // 原来这里只 new byte[8192] 读一次，结果在真机上踩了坑：
+                // QQ+麦麦一跑起来，socket 表能到几十上百行、十几 KB，
+                // 3001 那条记录排在后半段就被截断了 —— 于是
+                // 「3001 明明在听，App 却认为没登录，一直举着二维码」。
+                // 现在改成循环读到文件末尾。
+                java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                byte[] chunk = new byte[8192];
+                int n;
+                while ((n = in.read(chunk)) > 0) {
+                    bos.write(chunk, 0, n);
                 }
-                String text = new String(buf, 0, n);
+                String text = bos.toString("UTF-8");
                 for (String line : text.split("\n")) {
                     String[] cols = line.trim().split("\\s+");
                     if (cols.length < 4) {
@@ -457,7 +511,7 @@ public final class ProcessKiller {
                     try {
                         in.close();
                     } catch (IOException ignored) {
-}
+                    }
                 }
             }
         }

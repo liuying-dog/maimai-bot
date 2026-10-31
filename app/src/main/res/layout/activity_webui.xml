@@ -80,40 +80,54 @@
                 android:tint="#2B2430" />
         </LinearLayout>
 
-        <!-- 第二行：面板切换 麦麦 / QQ 桥接
-             放进标题条里（跟 AstrBot 一致），省掉单独一行占的高度，
-             同时把字号和高度放大，手指点起来更容易。
-             两个面板共用同一个 WebView，只是换 URL。 -->
-        <LinearLayout
+        <!-- 第二行：面板切换（可横向滑动）
+             照 AstrBot 的做法：标签不平均分配宽度，而是各自占各自需要的宽度，
+             外面套一层 HorizontalScrollView。这样标签多了（以后加「日志」「设置」之类）
+             可以直接往右滑，不用把文字挤成两三个字或者换行。
+             标签之间留 6dp 间距，滑动时能明显看出是「一张张卡片」在过。 -->
+        <HorizontalScrollView
+            android:id="@+id/tab_scroller"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:background="@drawable/bg_row_soft"
-            android:orientation="horizontal"
-            android:padding="4dp">
+            android:fillViewport="true"
+            android:padding="4dp"
+            android:scrollbars="none">
 
-            <TextView
-                android:id="@+id/tab_mb"
-                android:layout_width="0dp"
-                android:layout_height="42dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_nav_active"
-                android:gravity="center"
-                android:text="麦麦"
-                android:textColor="#4A3F7A"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/tab_sl"
-                android:layout_width="0dp"
-                android:layout_height="42dp"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:text="QQ 桥接"
-                android:textColor="#7A7290"
-                android:textSize="15sp" />
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/tab_mb"
+                    android:layout_width="wrap_content"
+                    android:layout_height="42dp"
+                    android:background="@drawable/bg_nav_active"
+                    android:gravity="center"
+                    android:minWidth="88dp"
+                    android:paddingStart="18dp"
+                    android:paddingEnd="18dp"
+                    android:text="麦麦"
+                    android:textColor="#4A3F7A"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tab_sl"
+                    android:layout_width="wrap_content"
+                    android:layout_height="42dp"
+                    android:layout_marginStart="6dp"
+                    android:gravity="center"
+                    android:minWidth="88dp"
+                    android:paddingStart="18dp"
+                    android:paddingEnd="18dp"
+                    android:text="QQ 桥接"
+                    android:textColor="#7A7290"
+                    android:textSize="15sp" />
+            </LinearLayout>
+        </HorizontalScrollView>
     </LinearLayout>
 
 

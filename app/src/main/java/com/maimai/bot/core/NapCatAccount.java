@@ -93,23 +93,57 @@ public final class NapCatAccount {
      * 登录成功的标志：NapCat 会写 config/onebot11_&lt;uin&gt;.json。
      * 文件名里带 QQ 号，正好可以拿来做「已登录」判断 + 显示账号。
      */
-    public String detectUin(Env env) {
-        File cfg = new File(workDir(env), "config");
-        File[] files = cfg.listFiles();
-        if (files == null) {
-            return "";
+    /**
+         * 这个账号是不是已经登录成功了。
+         * <p>
+         * <b>判据顺序（从最可靠到最不可靠）：</b>
+         * <ol>
+         *   <li><b>启动日志</b>：NapCat 登录成功会往 napcat.log 打
+         *       「快速登录成功 / 登录成功」。这是 App 自己写的文件，
+         *       不受 SELinux 限制，最可靠。</li>
+         *   <li>3001 端口在听 —— 但真机实测 App 进程（untrusted_app_27）
+         *       既读不到 /proc/net/tcp、socket 连 loopback 也常失败，
+         *       所以它只能当辅助。</li>
+         * </ol>
+         * 之前只靠第二条（或者只靠配置文件存在），才出现
+         * 「3001 明明在听，界面却说没登录」的错判。
+         */
+        public boolean isLoggedIn(Env env) {
+            // 1) 日志里明确写了登录成功
+            if (NapCat.isLoggedInByLog(env)) {
+                return true;
+            }
+            // 2) 有带 uin 的配置 + 3001 在听（两条都满足才算，避免旧文件误判）
+            return !readUinFromConfig(env).isEmpty()
+                    && ProcessKiller.isPortListening(onebotPort);
         }
-        for (File f : files) {
-            String n = f.getName();
-            if (n.startsWith("onebot11_") && n.endsWith(".json")) {
-                String u = n.substring("onebot11_".length(), n.length() - 5);
-                if (u.matches("\\d{5,12}")) {
-                    return u;
+
+        /**
+         * 只从 config/onebot11_&lt;uin&gt;.json 的文件名里读 QQ 号。
+         * 这是「号码」的来源，不代表一定在线。
+         */
+        public String detectUin(Env env) {
+            return readUinFromConfig(env);
+        }
+
+        /** 读 config 目录里 onebot11_&lt;uin&gt;.json 的 uin，读不到返回空串。 */
+        private String readUinFromConfig(Env env) {
+            File cfg = new File(workDir(env), "config");
+            File[] files = cfg.listFiles();
+            if (files == null) {
+                return "";
+            }
+            for (File f : files) {
+                String n = f.getName();
+                if (n.startsWith("onebot11_") && n.endsWith(".json")) {
+                    String u = n.substring("onebot11_".length(), n.length() - 5);
+                    if (u.matches("\\d{5,12}")) {
+                        return u;
+                    }
                 }
             }
+            return "";
         }
-        return "";
-    }
 
     /** 这个实例是否正在跑（WebUI 端口在听就算）。 */
     /**
@@ -127,7 +161,25 @@ public final class NapCatAccount {
      *       只要进程还在，就不该显示未运行。</li>
      * </ol>
      */
-    public boolean isRunning() {
+    public boolean isRunning(Env env) {
+            // 1) 端口探得到，直接算在跑
+            if (isRunning()) {
+                return true;
+            }
+            // 2) 日志里显示「登录成功且之后没掉线」—— 这也说明进程活着。
+            //
+            // 这一条很关键：NapCat 登录成功之后就不再往日志里打东西了，
+            // 如果只靠 isAliveByLog（看日志 mtime），90 秒后就会被判成「未运行」，
+            // 界面上那个徽标会在「已登录」和「未运行」之间来回跳。
+            if (NapCat.isLoggedInByLog(env)) {
+                return true;
+            }
+            // 3) 日志最近还在写（正在启动 / 正在扫码），也算在跑
+            return NapCat.isAliveByLog(env);
+        }
+
+        /** 这个实例是否正在跑（端口在听，或进程有日志输出）。 */
+        public boolean isRunning() {
         if (ProcessKiller.isPortListening(webuiPort)) {
             return true;
         }
@@ -155,12 +207,23 @@ public final class NapCatAccount {
      * （真机证据：onebot11_3611846660.json，文件名里的 uin
      * 和界面上显示的 QQ 号完全一致），它才是「已登录」的可靠信号。
      */
-    public boolean isOneBotUp() {
-        // 1) 已登录的铁证：NapCat 写了带 uin 的配置
-        if (loggedInUin != null && !loggedInUin.isEmpty()) {
-            return true;
+    public boolean isOneBotUp(Env env) {
+            // 日志里有明确的登录成功记录，就是已登录
+            if (NapCat.isLoggedInByLog(env)) {
+                return true;
+            }
+            // 否则退回端口判断（App 沙盒里可能不可用，所以只当辅助）
+            return isOneBotUp();
         }
-        // 2) 兜底：端口在听也算（兼容老数据 / 尚未刷新 uin 的时机）
+
+        /** 已登录判断（端口在听就算）。 */
+        public boolean isOneBotUp() {
+        // 判据统一成「3001 在不在听」。
+        //
+        // 以前第一判据是 loggedInUin 非空，但那是内存里的缓存值 ——
+        // 上次登录成功后写进去的，掉线了也不会被清掉，于是界面一直显示
+        // 「已登录」而实际早就断了。现在只认端口：NapCat 只有在 QQ 真登录
+        // 成功之后才会把 OneBot WS 服务拉起来，端口在听就是铁证。
         return ProcessKiller.isPortListening(onebotPort);
     }
 
@@ -312,6 +375,57 @@ public final class NapCatAccount {
         writeConfig(env, null);
     }
 
+    /**
+     * 从盘上已有的 webui.json 里读 autoLoginAccount。
+     * <p>
+     * 纯粹是字符串抠取，不引 JSON 库 —— 这个文件是我们自己写的，
+     * 格式固定，一个正则就够。读不到返回空串。
+     */
+    private static String readExistingAutoLogin(File cfgDir) {
+        File f = new File(cfgDir, "webui.json");
+        if (!f.isFile()) {
+            return "";
+        }
+        try (java.io.BufferedReader r = new java.io.BufferedReader(
+                new java.io.InputStreamReader(new java.io.FileInputStream(f), "UTF-8"))) {
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = r.readLine()) != null) {
+                sb.append(line);
+            }
+            java.util.regex.Matcher m = java.util.regex.Pattern
+                    .compile("\"autoLoginAccount\"\\s*:\\s*\"(\\d+)\"").matcher(sb.toString());
+            return m.find() ? m.group(1) : "";
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * 从 config/onebot11_&lt;uin&gt;.json 的文件名反推 uin。
+     * <p>
+     * 这是最后一道兜底：哪怕 webui.json 被清空了，只要之前登录过，
+     * NapCat 就会留下这个带 QQ 号的配置文件，从文件名就能把号捞回来。
+     *
+     * @return 捞到的 uin，没有就返回空串
+     */
+    private static String readUinFromConfigFiles(File cfgDir) {
+        File[] files = cfgDir.listFiles();
+        if (files == null) {
+            return "";
+        }
+        for (File f : files) {
+            String n = f.getName();
+            if (n.startsWith("onebot11_") && n.endsWith(".json")) {
+                String u = n.substring("onebot11_".length(), n.length() - 5);
+                if (u.matches("\\d{5,12}")) {
+                    return u;
+                }
+            }
+        }
+        return "";
+    }
+
     /** 带日志的版本：把每个写入动作都记一笔，失败时能看出是哪一步。 */
     public void writeConfig(Env env, BootLog log) {
         File cfgDir = new File(workDir(env), "config");
@@ -319,13 +433,37 @@ public final class NapCatAccount {
         mkdirsOrThrow(new File(workDir(env), "cache"), log);
         mkdirsOrThrow(new File(workDir(env), "logs"), log);
 
+        // 算这次要写进 autoLoginAccount 的值。
+        //
+        // 这一行是「每次启动都要重新扫码」的根因所在，改动要小心：
+        // 原来直接写 (uin == null ? "" : uin)，而每次启动 NapCat.start()
+        // 都会调这个不带 uin 的重载 —— 于是每启一次就把已经记住的 QQ 号
+        // 抹成空串，NapCat 下次自然找不到「可用于快速登录」的账号，
+        // 只能弹二维码。用户看到的就是「昨天刚扫过，今天又要扫」。
+        //
+        // 现在的策略是「按优先级取，绝不无故清空」：
+        //   1) 内存里的 uin（登录后 detectUin 填进来的）
+        //   2) 盘上旧 webui.json 里已经记着的 autoLoginAccount
+        //   3) 从 onebot11_<uin>.json 文件名里反推
+        //   4) 都没有才写空
+        String loginUin = uin;
+        if (loginUin == null || loginUin.isEmpty()) {
+            loginUin = readExistingAutoLogin(cfgDir);
+        }
+        if (loginUin == null || loginUin.isEmpty()) {
+            loginUin = readUinFromConfigFiles(cfgDir);
+        }
+        if (loginUin == null) {
+            loginUin = "";
+        }
+
         String webui = "{\n"
                 + "  \"host\": \"0.0.0.0\",\n"
                 + "  \"port\": " + webuiPort + ",\n"
                 + "  \"prefix\": \"\",\n"
                 + "  \"token\": \"" + webuiToken + "\",\n"
                 + "  \"loginRate\": 10,\n"
-                + "  \"autoLoginAccount\": \"" + (uin == null ? "" : uin) + "\"\n"
+                + "  \"autoLoginAccount\": \"" + loginUin + "\"\n"
                 + "}\n";
         writeText(webuiConfig(env), webui, log);
 

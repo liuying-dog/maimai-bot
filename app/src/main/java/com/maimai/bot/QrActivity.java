@@ -22,6 +22,7 @@ import android.widget.Toast;
 import com.maimai.bot.core.Env;
 import com.maimai.bot.core.NapCat;
 import com.maimai.bot.core.NapCatAccount;
+import com.maimai.bot.core.ProcessKiller;
 
 import java.io.File;
 import java.util.List;
@@ -54,7 +55,33 @@ public class QrActivity extends Activity {
     /** 总超时：超过这么久还没有二维码就提示去看日志。 */
     private static final long TIMEOUT_MS = 120_000;
 
+    /**
+     * 二维码显示出来后，等多久还没扫就自动重新出码。
+     * <p>
+     * QQ 的登录二维码有效期大概 2~3 分钟，过期后再扫会提示「二维码已失效」。
+     * 这里取 90 秒就换 —— 留出余量，避免用户刚好在失效那一刻扫。
+     * 换码的方式是重启 NapCat 实例（见 {@link #restartForNewQr()}），
+     * 因为 NapCat 只在拉起登录流程那一刻写一次二维码图片，进程活着不会自己刷新。
+     */
+    private static final long QR_REFRESH_AFTER_MS = 90_000;
+
+    /**
+     * 自动重出码最多做几次。
+     * <p>
+     * 不设上限的话，如果 QQ 侧一直拒绝（比如账号被风控），就会无限重启实例，
+     * 白白发热耗电。3 次足够覆盖「网络抖一下」「手慢了没扫上」这类正常情况，
+     * 再多就该让用户去看日志了。
+     */
+    private static final int MAX_AUTO_REFRESH = 3;
+
     private final Handler ui = new Handler(Looper.getMainLooper());
+
+    /** 当前这张二维码是什么时候显示出来的，用来判断要不要自动换码。 */
+    private long qrShownAt = 0;
+    /** 已经自动重出码几次。 */
+    private int autoRefreshCount = 0;
+    /** 正在自动重出码中，避免重复触发。 */
+    private boolean autoRefreshing = false;
 
     private String accountId;
     private String accountLabel;
@@ -260,12 +287,19 @@ public class QrActivity extends Activity {
             return false;
         }
 
-        // 1) 已经登录成功了吗？（NapCat 登录后会写 config/onebot11_<uin>.json）
+        // 判据统一走 isLoggedIn()：优先读启动日志里有没有「登录成功」，
+        // 其次才是端口。App 在 untrusted_app_27 域下读不到 /proc/net/tcp、
+        // loopback 连接也常失败，只靠端口会一直误判成「没登录」。
+        boolean loggedIn = acc.isLoggedIn(env);
         String uin = acc.detectUin(env);
-        if (!uin.isEmpty() && !jumped) {
+        if (loggedIn && !jumped) {
             jumped = true;
             NapCat.refreshUin(env, acc);
-            status.setText("已登录：" + uin + "，正在打开面板…");
+            // 号码可能读不到，那就退回用账号上记着的 uin，别显示空
+            String show = uin.isEmpty() ? acc.uin : uin;
+            status.setText(show == null || show.isEmpty()
+                    ? "已登录，正在打开面板…"
+                    : ("已登录：" + show + "，正在打开面板…"));
             spinner.setVisibility(View.GONE);
             qrView.setVisibility(View.GONE);
             hint.setText("登录成功。以后启动会自动快速登录，不用再扫码。");
@@ -281,8 +315,19 @@ public class QrActivity extends Activity {
             // 只认「本次进入页面之后生成」的图。
             // 之前踩过：上一次运行留下的旧码还在盘上，页面一来就把它当成
             // 新码显示出来，用户扫了报「二维码已失效」，还以为是我们没刷出来。
-            // 这里留 3 秒容差，避免启动和进页面的先后顺序把新图也挡掉。
-            boolean fresh = mtime >= (startedAt - 3000);
+            //
+            // 但也不能一刀切：如果实例是**正在运行**的（6099 在听），
+            // 盘上那张码就是它当前这次登录流程生成的有效码 —— 用户从主页
+            // 点回来想扫的就是它。以前这里只看时间，导致「码明明在、
+            // 界面却一直不显示」，只能重启实例碰运气。
+            //
+            // 所以现在分两种：
+            //   · 实例在跑 → 接受盘上任意新鲜的码（10 分钟内的，QQ 码有效期远小于这个）
+            //   · 实例刚起 → 只认本次进入页面之后生成的（保留原来的防误判）
+            boolean runningNow = ProcessKiller.isPortListening(acc.webuiPort);
+            boolean fresh = runningNow
+                    ? mtime >= (startedAt - 10 * 60_000L)
+                    : mtime >= (startedAt - 3000);
             if (len > 0 && fresh && (len != lastLen || mtime != lastMtime)) {
                 Bitmap bmp = BitmapFactory.decodeFile(png.getAbsolutePath());
                 if (bmp != null) {
@@ -294,8 +339,41 @@ public class QrActivity extends Activity {
                     status.setText("请用手机 QQ 扫码");
                     status.setTextColor(Color.parseColor("#7EE0A0"));
                     hint.setText("扫码后在手机上确认登录。登录成功会自动跳转面板。");
+                    // 记录这张码是什么时候开始等的，90 秒还没扫就自动换
+                    qrShownAt = System.currentTimeMillis();
                 } else {
                     status.setText("二维码图片读不出来，稍后重试…");
+                }
+            } else if (fresh || qrShownAt > 0) {
+                // 二维码已经在显示了，检查是不是放太久该换了。
+                //
+                // 这一段是这次新加的：以前二维码显示出来之后就什么都不做，
+                // 用户放着不管过了两三分钟再扫，QQ 会报「二维码已失效」，
+                // 而界面上那张图还亮着，看起来像正常 —— 体验很糟。
+                // 现在的做法是：显示满 90 秒就自动重启实例重新出码，
+                // 全程不用用户点任何按钮。
+                if (qrShownAt > 0
+                        && System.currentTimeMillis() - qrShownAt > QR_REFRESH_AFTER_MS
+                        && !autoRefreshing) {
+                    if (autoRefreshCount < MAX_AUTO_REFRESH) {
+                        autoRefreshCount++;
+                        autoRefreshing = true;
+                        status.setText("二维码已过期，正在重新生成（第 "
+                                + autoRefreshCount + "/" + MAX_AUTO_REFRESH + " 次）…");
+                        status.setTextColor(Color.parseColor("#FFD08A"));
+                        hint.setText("不用操作，自动换新码。");
+                        qrView.setVisibility(View.INVISIBLE);
+                        spinner.setVisibility(View.VISIBLE);
+                        // 重置计时，避免重启过程中被反复触发
+                        qrShownAt = 0;
+                        restartForNewQr();
+                    } else {
+                        // 已经自动换过 3 次还是没扫上，不再自动折腾，交给用户决定
+                        status.setText("二维码多次过期，请手动点「重新出码」");
+                        status.setTextColor(Color.parseColor("#FF8A8A"));
+                        hint.setText("也可以点「看启动日志」，确认是不是 QQ 侧一直在拒绝。");
+                        qrShownAt = 0;
+                    }
                 }
             } else if (!fresh) {
                 long waited = System.currentTimeMillis() - startedAt;
@@ -358,6 +436,8 @@ public class QrActivity extends Activity {
                         spinner.setVisibility(View.GONE);
                         status.setTextColor(0xFFFF8A8A);
                         status.setText("重启失败：" + err);
+                        // 失败也要解锁，否则「重新出码」按钮按了没反应
+                        autoRefreshing = false;
                     });
                     return;
                 }
@@ -379,6 +459,8 @@ public class QrActivity extends Activity {
                     spinner.setVisibility(View.GONE);
                     status.setTextColor(0xFFFF8A8A);
                     status.setText("重启出错：" + e);
+                    // 异常路径同样要解锁
+                    autoRefreshing = false;
                 });
                 return;
             }
@@ -388,6 +470,10 @@ public class QrActivity extends Activity {
                 lastLen = -1;
                 lastMtime = -1;
                 startedAt = System.currentTimeMillis();
+                // 重启完成，解除自动重出码的锁，并把过期计时清零 ——
+                // 新码要重新开始算 90 秒，否则会立刻又被判过期，陷入死循环
+                autoRefreshing = false;
+                qrShownAt = 0;
                 status.setText("实例已重启，正在等新二维码…");
                 if (!polling) {
                     polling = true;

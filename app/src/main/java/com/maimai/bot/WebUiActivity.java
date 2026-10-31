@@ -192,6 +192,39 @@ setupWebView();
         tabSl.getPaint().setFakeBoldText(showingSnow);
         tabMb.invalidate();
         tabSl.invalidate();
+        // 选中的标签如果被滑到屏幕外了，自动滚回可见区域。
+        // 现在只有两个标签不会触发，但标签一多（用户滑到右边点了第三个）就很需要，
+        // 否则点了之后新选中的那个看不见，不知道点没点成功。
+        scrollTabIntoView(showingSnow ? tabSl : tabMb);
+    }
+
+    /**
+     * 把指定标签滚到可见区域。
+     * <p>
+     * 用 post 而不是直接调：刚设完背景，布局还没重新测量，
+     * 这时算出来的左右坐标是旧的，滚过去会有偏差。
+     */
+    private void scrollTabIntoView(final View tab) {
+        if (tab == null) {
+            return;
+        }
+        tab.post(() -> {
+            try {
+                View parent = (View) tab.getParent();
+                if (parent == null) {
+                    return;
+                }
+                // 让标签居中一点，不要贴着边
+                int target = tab.getLeft() - (parent.getWidth() - tab.getWidth()) / 2;
+                android.widget.HorizontalScrollView scroller =
+                        (android.widget.HorizontalScrollView)
+                                findViewById(R.id.tab_scroller);
+                if (scroller != null) {
+                    scroller.smoothScrollTo(Math.max(0, target), 0);
+                }
+            } catch (Exception ignored) {
+            }
+        });
     }
 
 

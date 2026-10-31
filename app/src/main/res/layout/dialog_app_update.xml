@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 发现新版本弹窗的内容布局
+     弹窗本身由 Java 用 AlertDialog 包起来，这里只放内容。
+     重点是「下载源选择」：GitHub 主站在国内经常连不上，
+     所以同时给官方直链和几个加速镜像，让用户自己挑能通的那个。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="4dp"
+    android:paddingTop="4dp"
+    android:paddingEnd="4dp"
+    android:paddingBottom="2dp">
+
+    <!-- 版本变化 -->
+    <TextView
+        android:id="@+id/tv_update_versions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#2B2430"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tv_update_tip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text=""
+        android:textColor="#7A7290"
+        android:textSize="12sp" />
+
+    <!-- 下载源标题 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="6dp"
+        android:text="选择下载源"
+        android:textColor="#7A7290"
+        android:textSize="12sp" />
+
+    <!-- 下载源列表：Java 里动态往里塞行 -->
+    <LinearLayout
+        android:id="@+id/ll_update_sources"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" />
+
+</LinearLayout>

@@ -170,6 +170,128 @@ public final class NapCat {
         return new File(env.base(), "napcat.log");
     }
 
+    /**
+     * 从启动日志判断 NapCat 现在是不是「活着且已登录」。
+     * <p>
+     * <b>为什么不靠端口探测。</b>
+     * 真机日志（port_diag.log）已经证实：App 进程的 SELinux 域是
+     * {@code untrusted_app_27:s0:c512,c768}，在这个域下
+     * <ul>
+     *   <li>读 {@code /proc/net/tcp} 拿不到别的进程的 socket 表；</li>
+     *   <li>向 {@code 127.0.0.1:3001 / 6099} 发起的 socket connect 也经常直接失败。</li>
+     * </ul>
+     * 于是出现「3001 明明在听、App 却一直显示未运行 / 未登录」这种自相矛盾的界面。
+     * <p>
+     * 换成读日志就稳了：napcat.log 是 BotService 自己写进 App 私有目录的，
+     * 不受 SELinux 限制，而且里面本来就有 NapCat 的完整输出。
+     * <p>
+     * 判定规则（只看<b>本次启动</b>那一段，不误读历史记录）：
+     * <ol>
+     *   <li>找到最后一条启动分隔标记（{@code [步骤] 1/8}），从那之后开始扫；</li>
+     *   <li>出现「登录成功 / 快速登录成功 / 已登录」→ 已登录；</li>
+     *   <li>之后又出现「离线 / 掉线 / 登录失败」→ 未登录。</li>
+     * </ol>
+     *
+     * @return 已登录返回 true
+     */
+    public static boolean isLoggedInByLog(Env env) {
+        File log = logFile(env);
+        if (!log.isFile()) {
+            return false;
+        }
+        java.util.List<String> lines = tailLines(log, 400);
+        // 从后往前找最后一条启动标记，只分析那之后的内容
+        int start = 0;
+        for (int i = lines.size() - 1; i >= 0; i--) {
+            if (lines.get(i).contains("[步骤] 1/8")) {
+                start = i;
+                break;
+            }
+        }
+        boolean online = false;
+        for (int i = start; i < lines.size(); i++) {
+            String l = lines.get(i);
+            if (l.contains("登录成功") || l.contains("已登录")
+                    || l.contains("快速登录成功")) {
+                online = true;
+            }
+            // 这三类都表示「这一轮已经结束了」，登录状态必须清掉。
+            //
+            // 前两个是掉线；第三个「停止」是用户主动停的 —— 之前漏了它，
+            // 导致点停止之后日志里没有任何「离线」字样，isLoggedInByLog
+            // 仍然认为已登录，于是界面上的 ⏸ 和「已登录」徽标都不消失，
+            // 用户看到的就是「点了没反应」（其实进程早停了）。
+            if (l.contains("离线") || l.contains("掉线")
+                    || l.contains("登录失败") || l.contains("已失效")
+                    || l.contains("停止 ") || l.contains("已结束 NapCat 进程")) {
+                online = false;
+            }
+        }
+        return online;
+    }
+
+    /**
+     * NapCat 进程是不是还在跑（用日志活跃度判断）。
+     * <p>
+     * 同样绕开端口探测：如果 napcat.log 最近还在被写，说明 proot 那一支
+     * 还活着并且有输出。90 秒没有任何写入视为已停 —— 留够余量，
+     * 因为 NapCat 空闲时确实可能半天不打印东西。
+     */
+    public static boolean isAliveByLog(Env env) {
+        File log = logFile(env);
+        if (!log.isFile()) {
+            return false;
+        }
+        // 先看日志最后几条是不是「已经停了」。
+        //
+        // 这一步不能省：停止时 NapCat 会立刻写「停止 账号1 / 已结束 NapCat 进程」，
+        // 日志 mtime 反而变得最新。如果只看 mtime，刚停完就会被判成「还活着」，
+        // 界面上的 ⏸ 和「已登录」永远不会消失 —— 用户点了停止像没反应一样。
+        java.util.List<String> tail = tailLines(log, 30);
+        for (int i = tail.size() - 1; i >= 0; i--) {
+            String l = tail.get(i);
+            if (l.trim().isEmpty()) {
+                continue;
+            }
+            // 倒着找最后一条有内容的行为准
+            if (l.contains("停止 ") || l.contains("已结束 NapCat 进程")) {
+                return false;
+            }
+            break;
+        }
+        long age = System.currentTimeMillis() - log.lastModified();
+        return age < 90_000L;
+    }
+
+    /** 读文件最后 n 行。文件很大时只读尾部 256KB，避免卡顿。 */
+    private static java.util.List<String> tailLines(File f, int n) {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        java.io.RandomAccessFile raf = null;
+        try {
+            raf = new java.io.RandomAccessFile(f, "r");
+            long len = raf.length();
+            long from = Math.max(0, len - 256 * 1024);
+            raf.seek(from);
+            byte[] buf = new byte[(int) (len - from)];
+            raf.readFully(buf);
+            String text = new String(buf, "UTF-8");
+            String[] all = text.split("\n");
+            int start = Math.max(0, all.length - n);
+            for (int i = start; i < all.length; i++) {
+                out.add(all[i]);
+            }
+        } catch (Exception ignored) {
+        } finally {
+            if (raf != null) {
+                try {
+                    raf.close();
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        return out;
+    }
+
     // ---------------------------------------------------------------- 启动
 
     /**

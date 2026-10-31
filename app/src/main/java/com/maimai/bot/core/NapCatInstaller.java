@@ -57,7 +57,7 @@ public final class NapCatInstaller {
      * <p>
      * 换 assets/napcat.zip 时必须同步改这里，否则界面显示的版本会跟实际不符。
      */
-    static final String BUNDLED_NAPCAT_VERSION = "4.18.41";
+    static final String BUNDLED_NAPCAT_VERSION = "4.18.42";
 
     private NapCatInstaller() {
     }

@@ -187,8 +187,8 @@ public final class MainActivity extends Activity {
                         }
                     }
                 }
-                running = st.account.isRunning();
-                onebotUp = st.account.isOneBotUp();
+                running = st.account.isRunning(BotState.get(this).env());
+                onebotUp = st.account.isOneBotUp(BotState.get(this).env());
             } catch (Exception e) {
                 continue;
             }
@@ -257,13 +257,31 @@ public final class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         bindViews();
         wireActions();
         requestNotificationPermission();
         ensureBaseline();
         renderAccounts();
         render();
+
+        // 冷启动时查一次 App 有没有新版本。
+        //
+        // 只在这一刻查：AppUpdatePrompt 内部用静态标记挡住了「同进程重复查」，
+        // 所以退到后台再回来不会再弹一次；但把任务划掉重开（新进程）会重新查。
+        // 另外传 savedInstanceState 进去，是为了让横竖屏旋转重建时不再弹窗。
+        // 放在 onCreate 最后：前面那些初始化更重要，更新检查是后台线程，不挡流程。
+        com.maimai.bot.core.AppUpdatePrompt.maybeCheckOnLaunch(
+                this, savedInstanceState, appVersionName());
+    }
+
+    /** 读本 App 的 versionName，读不到返回空串。 */
+    private String appVersionName() {
+        try {
+            return getPackageManager()
+                    .getPackageInfo(getPackageName(), 0).versionName;
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     @Override
@@ -335,7 +353,15 @@ public final class MainActivity extends Activity {
         btnStart.setOnClickListener(v -> startBot());
         btnStop.setOnClickListener(v -> stopBot());
         btnWebui.setOnClickListener(v -> openWebui());
-        btnCopyToken.setOnClickListener(v -> copyToken());
+btnCopyToken.setOnClickListener(v -> copyToken());
+
+        // 右上角齿轮：进设置页。里面再进「关于」看仓库地址和开源协议。
+        android.view.View btnSettingsEntry = findViewById(R.id.btn_settings_entry);
+        if (btnSettingsEntry != null) {
+            btnSettingsEntry.setOnClickListener(v ->
+                    startActivity(new Intent(this, SettingsActivity.class)));
+        }
+
         btnConsole.setOnClickListener(v ->
                 startActivity(new Intent(this, ConsoleActivity.class)));
         btnReinstall.setOnClickListener(v -> confirmReinstall());
@@ -518,8 +544,8 @@ public final class MainActivity extends Activity {
         if (uin != null && !uin.isEmpty()) {
             a.uin = uin;
         }
-        final boolean running = a.isRunning();
-        final boolean onebotUp = a.isOneBotUp();
+        final boolean running = a.isRunning(env);
+        final boolean onebotUp = a.isOneBotUp(env);
 
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
@@ -552,9 +578,18 @@ public final class MainActivity extends Activity {
             //
             // 现在改成：以「这个实例的 WebUI 端口是否在听」为主判据
             // （这才是这个实例自己的状态），进程兜底只在端口探测完全不可用时生效。
-            boolean alive = ProcessKiller.isPortListening(a.webuiPort)
-                    || ProcessKiller.isPortListening(a.onebotPort);
+            final Env clickEnv = BotState.get(this).env();
+            boolean alive = a.isRunning(clickEnv);
             if (alive) {
+                // 圆形按钮是「启停键」，不是「打开面板」。
+                //
+                // 上一版我在这里改成了「已登录就 openAccountPanel」，
+                // 结果用户点那个 ⏸ 想停止时，反而跳去了 WebUI 面板 ——
+                // 这违背了按钮本身的语义（图标是暂停，动作就该是停）。
+                // 现在恢复成：只要在跑，点它就是停止。
+                //
+                // 「已登录想看面板」这条需求由卡片右侧那个地球图标承担，
+                // 那里调 openAccountPanel，职责分明。
                 stopAccount(a);
             } else {
                 // 端口没在听，但可能真有进程在跑（端口探测在沙盒里偶发失败），
@@ -767,10 +802,23 @@ public final class MainActivity extends Activity {
         // 用户还得自己滚回去找；而且 NapCat 的二维码是 ASCII 画的，
         // 在日志里根本没法扫。现在日志留在扫码页的「看启动日志」按钮里，
         // 需要排查时一键可达。
-        Intent qrIntent = new Intent(this, QrActivity.class);
-        qrIntent.putExtra(QrActivity.EXTRA_ACCOUNT_ID, a.id);
-        qrIntent.putExtra(QrActivity.EXTRA_ACCOUNT_LABEL, a.label);
-        startActivity(qrIntent);
+        // 已经登录过的账号（日志里有「登录成功」且没掉线）就不用看二维码了，
+        // 直接开面板；只有没登录过的才需要进扫码页。
+        //
+        // 这样区分是为了避免把「快速登录正常」的用户也丢到扫码页上，
+        // 让他对着一个根本不需要扫的码发呆。
+        if (a.isLoggedIn(BotState.get(this).env())) {
+            a.uin = a.detectUin(BotState.get(this).env());
+            if (a.uin == null) {
+                a.uin = "";
+            }
+            openAccountPanel(a);
+        } else {
+            Intent qrIntent = new Intent(this, QrActivity.class);
+            qrIntent.putExtra(QrActivity.EXTRA_ACCOUNT_ID, a.id);
+            qrIntent.putExtra(QrActivity.EXTRA_ACCOUNT_LABEL, a.label);
+            startActivity(qrIntent);
+        }
         new Thread(() -> {
             Env env = BotState.get(this).env();
             String err = NapCat.start(this, env, a);
@@ -847,6 +895,9 @@ public final class MainActivity extends Activity {
     }
 
         private void stopAccount(final NapCatAccount a) {
+        // 立刻给个反馈。之前点了之后只有图标变，如果判断链路有任何延迟，
+        // 用户会觉得「点了没反应」而反复点。
+        Toast.makeText(this, "正在停止 " + a.label + "…", Toast.LENGTH_SHORT).show();
         new Thread(() -> {
             NapCat.stop(BotState.get(this).env(), a);
             runOnUiThread(() -> {
@@ -858,7 +909,11 @@ public final class MainActivity extends Activity {
 
     /** 打开某个账号的面板，并带上 token 自动登录。 */
     private void openAccountPanel(NapCatAccount a) {
-        if (!a.isRunning()) {
+        // 这里必须用带 Env 的 isRunning —— 无参版本只看端口，
+        // 而 App 在 untrusted_app_27 域下读不到 /proc/net/tcp、
+        // loopback connect 也常失败，于是「明明已登录却提示还没启动」。
+        // 带 Env 的版本会用日志兜底，才是真实状态。
+        if (!a.isRunning(BotState.get(this).env())) {
             Toast.makeText(this, a.label + " 还没启动", Toast.LENGTH_SHORT).show();
             return;
         }
